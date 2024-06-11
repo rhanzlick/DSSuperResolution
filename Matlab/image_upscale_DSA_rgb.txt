@@ -1,0 +1,114 @@
+%Adaptation of Diamond Square Algorithm for Image Upscaling
+%Author: Ryan Hanzlick
+%Date: 05-27-19
+clear
+close
+clc
+
+tic
+
+%A = rand(3) %Initial matrix used for testing
+originalImg = imread('img1.png');
+img = imread('img3.png');
+%img = rgb2gray(img);
+%img = imread('AlexandRyan.jpg');
+%img = imread('img3.jpg');
+
+rgb = length(img(1,1,:));
+
+hp=[0,-1,0;-1,5,-1;0,-1,0]; %highpass filter kernel
+lp1=(1/16)*[1,2,1;2,5,2;1,2,1]; %lowpass filter kernel
+lp2=ones(3)/9; %low pass filter kernel
+
+res = size(img);
+
+%Enlarge initial image by inserting zero rows/columns
+imgCell = cell(1,rgb);
+newImg = cell(1,rgb);
+
+for layers=1:rgb
+    imgCell{layers}=img(:,:,layers);
+    newImg{layers} = zeros((2*res(1))-1,(2*res(2)-1));
+end
+
+
+for z = 1:rgb
+%%
+flag=0;
+%Enlarge
+    for i=1:res(1)
+        for j=1:res(2)
+            newImg{z}(2*i-1,2*j-1)=img(i,j,z);     %increase each dimension by (2x-1)
+        end
+    end
+
+    newRes = size(newImg{z});
+    
+
+%%
+%Pad matrix for diamond-square process
+    newImg{z} = [zeros(newRes(1),1),newImg{z},zeros(newRes(1),1)];
+    newImg{z} = [zeros(1,newRes(2)+2);newImg{z};zeros(1,newRes(2)+2)];
+
+    newRes = size(newImg{z});
+
+
+%%
+%Calculate Square centers
+    for i=3:2:newRes(1)-2
+        if(i/(newRes(1)-2)>0.5&&flag==0)
+            disp(cat(2,'Square 50% complete for color ',num2str(z),'. Elapsed Time: ',num2str(toc)))
+            flag=1;
+        end
+        for j=3:2:newRes(2)-2
+            newImg{z}(i,j) = 0.25*(newImg{z}(i+1,j-1)+newImg{z}(i+1,j+1)+newImg{z}(i-1,j-1)+newImg{z}(i-1,j+1));
+        end
+    end
+
+
+%%
+%Calculate Diamond centers
+
+%newHeight = length(newImg(:,1));
+%newWidth = length(newImg(1,:));
+
+    for i=2:1:newRes(1)-1
+        if(i/(newRes(1)-1)==0.5)
+            disp(cat(2,'Diamond 50% complete for color ',num2str(z),'. Elapsed Time: ',num2str(toc)))
+        end
+        for j=3-mod(i,2):2:newRes(2)-1
+            newImg{z}(i,j) = 0.25*(newImg{z}(i-1,j)+newImg{z}(i+1,j)+newImg{z}(i,j-1)+newImg{z}(i,j+1));
+        end
+    end
+
+
+%%
+% Renormalize enlarged image values
+    newImg{z}=newImg{z}/max(newImg{z}(:));
+% Remove Padding
+    newImg{z}(newRes(1),:)=[];newImg{z}(1,:)=[];newImg{z}(:,newRes(2))=[];newImg{z}(:,1)=[];
+%%
+%*OPTIONAL* post-process filtering
+    newImg{z}=imfilter(newImg{z},lp2);    %apply low pass filter - remove noise
+    newImg{z}=imfilter(newImg{z},hp);     %apply high pass filter - sharpen image details
+    newImg{z}=medfilt2(newImg{z});        %apply median filter - remove any salt and pepper noise
+%***********************
+
+end
+
+%%
+%Concat each color
+finalImg = [];
+for fLayers=1:rgb
+    finalImg = cat(3,finalImg,newImg{fLayers});
+end
+
+%Output initial and final images for comparison
+
+imshow(finalImg)  %output new image
+title('Enlarged Image')
+figure
+imshow(originalImg)
+title('Original Image')
+
+toc

@@ -1,0 +1,79 @@
+%Adaptation of Diamond Square Algorithm for Image Upscaling
+%Author: Ryan Hanzlick
+%Date: 05-27-19
+clear
+close
+clc
+
+%A = rand(3) %Initial matrix used for testing
+img = imread('img1.png');
+img1 = rgb2gray(img);
+A=img1;
+
+beta = .0038;   %brightness factor
+hp=[0,-1,0;-1,5,-1;0,-1,0]; %highpass filter kernel
+lp1=(1/16)*[1,2,1;2,5,2;1,2,1]; %lowpass filter kernel
+lp2=ones(3)/9; %low pass filter kernel
+
+height = length(A(:,1));
+width = length(A(1,:));
+
+%%
+%Enlarge initial image by inserting zero rows/columns
+newImg = zeros(height,width);
+
+for i=1:height
+    for j=1:width
+    newImg(2*i-1,2*j-1)=A(i,j);     %increase each dimension by (2x-1)
+    end
+end
+
+newHeight = length(newImg(:,1));
+newWidth = length(newImg(1,:));
+
+%%
+%Pad matrix for diamond-square process
+newImg = [zeros(newHeight,1),newImg,zeros(newHeight,1)];
+newImg = [zeros(1,newWidth+2);newImg;zeros(1,newWidth+2)];
+
+newHeight = length(newImg(:,1));
+newWidth = length(newImg(1,:));
+
+%%
+%Calculate Square centers
+for i=3:2:newHeight-2
+    for j=3:2:newWidth-2
+        newImg(i,j) = 0.25*(newImg(i+1,j-1)+newImg(i+1,j+1)+newImg(i-1,j-1)+newImg(i-1,j+1));
+    end
+end
+
+%%
+%Calculate Diamond centers
+
+newHeight = length(newImg(:,1));
+newWidth = length(newImg(1,:));
+
+for i=2:1:newHeight-1
+    for j=3-mod(i,2):2:newWidth-1
+        newImg(i,j) = 0.25*(newImg(i-1,j)+newImg(i+1,j)+newImg(i,j-1)+newImg(i,j+1));
+    end
+end
+
+%%
+% dampen brightness values of new image - adjust beta by trial error - or use histeq?
+newImg=newImg*beta;
+
+%%
+%*OPTIONAL* post-process filtering
+newImg=imfilter(newImg,lp2);    %apply low pass filter - remove noise
+newImg=imfilter(newImg,hp);     %apply high pass filter - sharpen image details
+newImg=medfilt2(newImg);        %apply median filter - remove any salt and pepper noise
+%***********************
+%%
+%Output initial and final images for comparison
+
+imshow(newImg)  %output new image
+title('Enlarged Image')
+figure
+imshow(A)
+title('Original Image')
