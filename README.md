@@ -4,8 +4,8 @@ Using a linear interpolation variant, the algorithm - in its current form - will
 Currently it works on both greyscale and RGB images.
 
 # CLI
-The algorithm is wrapped in a lightweight CLI implemented with argparse called upscale.py.
-See the upscale.py help options for usage.
+The algorithm is wrapped in a lightweight CLI implemented with argparse called cli.py.
+See the cli.py help options for usage.
 
 # Sample Image
 The repo contains a sample image used for testing.

@@ -1,6 +1,8 @@
 import argparse, sys
 from typing import Union, Sequence
 
+from CoreAlgo import DiamondSquare
+
 class SR_CLI():
     def __init__(self):
         desc = '''
@@ -23,8 +25,23 @@ class SR_CLI():
             exit(1)
 
     def upscale(self):
-        print('run upscale command', flush=True)
+        #print('run upscale command', flush=True)
+
+        parser = DiamondSquare.Parser()
+        try:
+            args = parser.parse_args(sys.argv[2:])
+            src = args.Source
+            trg = args.Target
+            allow_overwrite = args.Overwrite
+            if src is None:
+                raise Exception('Source image not provided.')
+
+        except Exception as ex:
+            print(ex)
+            #parser.print_help()
         
+        algo = DiamondSquare(src, trg, allow_overwrite)
+        algo.Execute()
 
 if __name__ == '__main__':
     SR_CLI()
